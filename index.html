@@ -63,6 +63,15 @@ body{background:#F5F3EA;-webkit-text-size-adjust:100%}
   .app-main [style*="min-width: 130px"]{min-width:0 !important}
   /* barras apiladas V/E/D: los segmentos no deben saltar de línea */
   .app-main [style*="height: 9px"][style*="display: flex"]{flex-wrap:nowrap !important}
+  /* tabla de jugadores de Análisis: todas las columnas visibles sin scroll */
+  .app-main [style*="1.4fr 0.7fr 0.6fr"]{min-width:0 !important;grid-template-columns:1.5fr 0.8fr 0.6fr 0.6fr 0.6fr 0.4fr 0.4fr !important;padding-left:10px !important;padding-right:10px !important;gap:4px;font-size:11px !important;letter-spacing:0 !important}
+  .app-main [style*="1.4fr 0.7fr 0.6fr"] > span{min-width:0;overflow-wrap:anywhere}
+  .app-main [style*="1.4fr 0.7fr 0.6fr"][style*="letter-spacing"]{font-size:8.5px !important}
+  .app-main [style*="1.4fr 0.7fr 0.6fr"][style*="letter-spacing"] > span{overflow-wrap:normal}
+  /* vallas: todas las jornadas entran en el ancho de la pantalla */
+  .app-main [style*="minmax(34px"]{grid-template-columns:none !important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px !important}
+  .app-main [style*="minmax(34px"] > div{font-size:9px !important}
+  .app-main [style*="overflow-x: auto"] > [style*="min-width"]{min-width:0 !important}
   .app-main [style*="1.4fr 0.7fr 0.6fr"],
   .app-main [style*="0.9fr 1.3fr 1fr"],
   .app-main [style*="0.4fr 1.3fr 0.6fr"],
