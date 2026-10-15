@@ -358,7 +358,7 @@ function zPdfRival(club,r,fo){
   /* Pelota parada */
   var abp=r.abp||{};
   var abpHtml=zRvGrupos.map(function(g){
-    var imgs=[],nota=(abp[g[0]]||"").trim();
+    var imgs=((fo&&fo[g[0]])||[]).filter(Boolean),nota=(abp[g[0]]||"").trim();
     if(!imgs.length&&!nota)return"";
     return '<div style="margin-bottom:10px;"><div style="font-weight:700;font-size:12px;margin-bottom:5px;">'+g[1]+'</div>'
       +(imgs.length?'<div style="display:flex;gap:8px;margin-bottom:5px;">'+imgs.map(function(src){return '<div style="flex:1;height:150px;border:1px solid #D9D4C4;border-radius:6px;overflow:hidden;background:#F5F3EA;display:flex;align-items:center;justify-content:center;"><img src="'+src+'" style="max-width:100%;max-height:100%;object-fit:contain;" /></div>'}).join("")+'</div>':'')
@@ -379,6 +379,8 @@ function zRv(p){
   var s2=V.useState(false),cargado=s2[0],setCargado=s2[1];
   var s3=V.useState(null),selId=s3[0],setSelId=s3[1];
   var s4=V.useState(""),msg=s4[0],setMsg=s4[1];
+  var s5=V.useState({}),fotos=s5[0],setFotos=s5[1];
+  var sucias=V.useRef({});
   var s6=V.useState("gen"),tab=s6[0],setTab=s6[1];
   var s7=V.useState(null),zoom=s7[0],setZoom=s7[1];
   var tm=V.useRef(null);
@@ -397,6 +399,18 @@ function zRv(p){
   var selKey=sel?sel.id:null;
 
   V.useEffect(function(){
+    if(!selKey||fotos[selKey])return;
+    (async function(){
+      var d=zRvVacias();
+      try{
+        var r=await window.storage.get("rivalfotos_"+selKey,false),o=JSON.parse(r.value);
+        zRvGrupos.forEach(function(g){if(Array.isArray(o[g[0]]))d[g[0]]=[0,1,2].map(function(i){return o[g[0]][i]||null})});
+      }catch(e){}
+      setFotos(function(pr){var x=Object.assign({},pr);x[selKey]=d;return x});
+    })();
+  },[selKey]);
+
+  V.useEffect(function(){
     function av(e){if(estado==="pend"||estado==="err"){e.preventDefault();e.returnValue=""}}
     window.addEventListener("beforeunload",av);
     return function(){window.removeEventListener("beforeunload",av)};
@@ -413,6 +427,13 @@ function zRv(p){
     try{
       var limpia=lista.map(function(x){var y=Object.assign({},x);delete y.escudo;return y});
       await window.storage.set("rivales",JSON.stringify(limpia),false);
+      var ids=Object.keys(sucias.current);
+      for(var q=0;q<ids.length;q++){
+        var id=ids[q],fo0=fotos[id];
+        if(sucias.current[id]==="del")await window.storage.set("rivalfotos_"+id,"{}",false);
+        else if(fo0)await window.storage.set("rivalfotos_"+id,JSON.stringify(fo0),false);
+        delete sucias.current[id];
+      }
       setEstado("ok");setGuardadoEn(new Date());
     }catch(e){
       setEstado("err");setErrDet((e&&e.message)||"sin conexión con el servidor");
@@ -422,7 +443,7 @@ function zRv(p){
   function exportarPdf(){
     if(!sel||!p.onExportPDF)return;
     var html;
-    try{html=zPdfRival(p.club,sel,null)}
+    try{html=zPdfRival(p.club,sel,fotos[sel.id]||null)}
     catch(e){setMsg("No se pudo generar el PDF del análisis rival.");return}
     p.onExportPDF("rival",html);
   }
@@ -433,11 +454,31 @@ function zRv(p){
   function crear(){var n=zRvNuevo();guardar(lista.concat([n]));setSelId(n.id);setTab("gen")}
   function eliminar(){
     if(!sel)return;
-    if(!window.confirm("¿Eliminar el análisis de "+(sel.rival||"este rival")+"?"))return;
+    if(!window.confirm("¿Eliminar el análisis de "+(sel.rival||"este rival")+"? Se borran también sus fotos."))return;
     var id=sel.id;
     guardar(lista.filter(function(x){return x.id!==id}));
     setSelId(null);
+    setFotos(function(pr){var x=Object.assign({},pr);delete x[id];return x});
+    sucias.current[id]="del";
   }
+  function guardarFotos(id,o){
+    setFotos(function(pr){var x=Object.assign({},pr);x[id]=o;return x});
+    sucias.current[id]=true;
+    if(ed)setEstado("pend");
+  }
+  function subirFoto(g,i,file){
+    if(!file||!sel||!fotos[sel.id])return;
+    var id=sel.id,cur=fotos[id];
+    zRvImg(file,function(d){
+      if(!d){setMsg("No se pudo leer la imagen.");return}
+      var o=Object.assign({},cur);o[g]=cur[g].slice();o[g][i]=d;guardarFotos(id,o);
+    });
+  }
+  function quitarFoto(g,i){
+    if(!sel||!fotos[sel.id])return;
+    var id=sel.id,cur=fotos[id],o=Object.assign({},cur);o[g]=cur[g].slice();o[g][i]=null;guardarFotos(id,o);
+  }
+
   function card(titulo,sub,kids,key){
     return h("div",{key:key,style:{border:"1px solid "+k.line,borderRadius:"8px",padding:"18px",background:"#fff"}},
       h("h3",{className:"display-font",style:{fontSize:"13px",fontWeight:600,margin:sub?"0 0 2px 0":"0 0 12px 0"}},titulo),
@@ -532,11 +573,25 @@ function zRv(p){
         })),
       "ali");
 
-    var abp=card("Pelota parada (ABP)","Notas por tipo de jugada.",
+    var fo=fotos[sel.id];
+    function slot(g,i){
+      var src=fo&&fo[g]&&fo[g][i];
+      var box={position:"relative",aspectRatio:"4 / 3",borderRadius:"6px",overflow:"hidden",border:"1px "+(src?"solid":"dashed")+" "+k.line,background:k.chalk,display:"flex",alignItems:"center",justifyContent:"center"};
+      if(src)return h("div",{key:i,style:box},
+        h("img",{src:src,alt:"Foto "+(i+1),onClick:function(){setZoom(src)},style:{width:"100%",height:"100%",objectFit:"contain",cursor:"zoom-in",display:"block"}}),
+        ed?h("button",{onClick:function(){quitarFoto(g,i)},title:"Quitar foto",style:{position:"absolute",top:"4px",right:"4px",background:"rgba(0,0,0,.65)",color:"#fff",border:"none",borderRadius:"4px",padding:"5px",cursor:"pointer",display:"flex"}},h(Aa,{size:13})):null);
+      if(ed)return h("label",{key:i,style:Object.assign({},box,{cursor:"pointer",flexDirection:"column",gap:"4px",color:k.inkSoft,fontSize:"11px"})},
+        h(qr,{size:18}),"Foto "+(i+1),
+        h("input",{type:"file",accept:"image/*",style:{display:"none"},onChange:function(e){var f=e.target.files&&e.target.files[0];e.target.value="";subirFoto(g,i,f)}}));
+      return h("div",{key:i,style:Object.assign({},box,{color:k.inkSoft,fontSize:"11px"})},"Sin foto");
+    }
+    var abp=card("Pelota parada (ABP)","Hasta 3 fotos por tipo de jugada. Tocá una foto para verla en grande.",
       h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:"14px"}},
         zRvGrupos.map(function(g){
           return h("div",{key:g[0],style:{border:"1px solid "+k.line,borderRadius:"6px",padding:"12px",background:k.chalk}},
             h("div",{className:"display-font",style:{fontSize:"13px",fontWeight:600,marginBottom:"8px"}},g[1]),
+            h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(110px, 1fr))",gap:"8px",marginBottom:"8px"}},
+              fo?[0,1,2].map(function(i){return slot(g[0],i)}):h("span",{style:{fontSize:"12px",color:k.inkSoft}},"Cargando fotos…")),
             h("textarea",{rows:2,value:(sel.abp&&sel.abp[g[0]])||"",readOnly:!ed,placeholder:"Notas (ej: sale cerrado al primer palo)",onChange:function(e){updAbp(g[0],e.target.value)},style:Object.assign({},areaSt,{background:"#fff"})}));
         })),
       "abp");
@@ -622,7 +677,9 @@ function zRv(p){
     body=h("div",null,chips,dl,h("div",{style:{display:"grid",gap:"16px"}},datos,torCard,ult,destCard,fd,movCard,yt,ali,ultAliCard,abp,borrar));
   }
 
-  var lightbox=null;
+  var lightbox=zoom?h("div",{onClick:function(){setZoom(null)},style:{position:"fixed",top:0,right:0,bottom:0,left:0,background:"rgba(0,0,0,.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",cursor:"zoom-out"}},
+    h("img",{src:zoom,alt:"Foto ampliada",style:{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:"6px"}})):null;
+
 
   return h("div",null,header,banner,body,lightbox);
 }
@@ -858,6 +915,9 @@ window.storage={
     return zBase.get(k);
   },
   async set(k,a){
+    try{return await window.storage._set(k,a)}catch(e){e.message=e.message+" [clave: "+k+", capa v2]";throw e}
+  },
+  async _set(k,a){
     if(esExtra(k)){
       return enCola(async function(){
         var o=await leerClub();o[X]=o[X]||{};
