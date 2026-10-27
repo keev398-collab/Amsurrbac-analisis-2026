@@ -1351,6 +1351,21 @@ var w=0,mw=0,u=0,mu=0;pl.forEach(function(c){if(c.a>c.b){w++;u++}else if(c.a===c
 if(mw>=2)r.push("Mejor racha ganadora: "+mw+" victorias seguidas");
 if(mu>=3&&mu>mw)r.push("Mayor racha invicta: "+mu+" partidos sin perder");
 return r}
+function zChipsEq(FX,team,cl){return FX.fechas.map(function(f){var m=f.p.filter(function(x){return x[1]===team||x[2]===team})[0];if(!m)return null;var loc=m[1]===team,a=loc?m[3]:m[4],b=loc?m[4]:m[3];return{key:(cl?"c":"a")+f.n,n:f.n,loc:loc,rival:loc?m[2]:m[1],j:typeof a==="number"&&typeof b==="number",a:a,b:b}}).filter(Boolean)}
+/* Mayor goleada y rachas de un equipo entre TODOS los torneos (Inicial + Complementario), indicando en cuál fue */
+function zExtrasAll(ini,com){var r=[],seq=[];
+(ini||[]).forEach(function(c){if(c.j)seq.push({c:c,t:"Inicial"})});
+(com||[]).forEach(function(c){if(c.j)seq.push({c:c,t:"Complementario"})});
+if(!seq.length)return r;
+var best=null,bi=-1;seq.forEach(function(x,i){var c=x.c,d=c.a-c.b;if(d>=2&&(!best||d>best.a-best.b||(d===best.a-best.b&&c.a>best.a))){best=c;bi=i}});
+var lug=function(a,b){var A=seq[a],B=seq[b];if(A.t===B.t)return A.t+(a===b?", fecha "+A.c.n:", fechas "+A.c.n+" a "+B.c.n);return A.t+" fecha "+A.c.n+" a "+B.t+" fecha "+B.c.n};
+if(best)r.push("Mayor goleada: "+best.a+" – "+best.b+" vs "+best.rival+" ("+seq[bi].t+", fecha "+best.n+")");
+var w=0,u=0,ws=0,us=0,mw=0,mu=0,mwr=null,mur=null;
+seq.forEach(function(x,i){var c=x.c;if(c.a>c.b){if(!w)ws=i;w++;if(!u)us=i;u++}else if(c.a===c.b){w=0;if(!u)us=i;u++}else{w=0;u=0}
+if(w>mw){mw=w;mwr=[ws,i]}if(u>mu){mu=u;mur=[us,i]}});
+if(mw>=2)r.push("Mejor racha ganadora: "+mw+" victorias seguidas ("+lug(mwr[0],mwr[1])+")");
+if(mu>=3&&mu>mw)r.push("Mayor racha invicta: "+mu+" partidos sin perder ("+lug(mur[0],mur[1])+")");
+return r}
 function zStats(lists,names){
 var out=[],all=[],best=0,vall=0,wl=null,wn="";
 lists.forEach(function(ch,li){var run=0;ch.forEach(function(c){if(!c.j||typeof c.a!=="number"||typeof c.b!=="number")return;all.push(c);if(c.a<c.b&&(!wl||c.b-c.a>wl.b-wl.a||(c.b-c.a===wl.b-wl.a&&c.b>wl.b))){wl=c;wn=names?names[li]:""}if(c.b===0){vall++;run++;if(run>best)best=run}else run=0})});
@@ -1466,7 +1481,7 @@ var P=((zp&&zp.partidos)||[]).slice().sort(function(u,v){var a=parseInt(u.jornad
 var chips=P.map(function(m,i){var prog=m.estado==="Programado",a=Number(m.gf)||0,b=Number(m.gc)||0,fd=String(m.fecha||"").split("-"),fs=fd.length===3?fd[2]+"/"+fd[1]:"";return{key:m.id||("m"+i),n:parseInt(m.jornada,10)||(i+1),loc:m.condicion==="Local",rival:m.rival||"—",j:!prog,a:a,b:b,tx:prog?("por jugar"+(fs?" · "+fs:"")):a+" – "+b}});
 var fcp=FX.fechas.map(function(f){var m=f.p.filter(function(x){return x[1]===yo.n||x[2]===yo.n})[0];if(!m)return null;var loc=m[1]===yo.n,a=loc?m[3]:m[4],b=loc?m[4]:m[3];return{key:"f"+f.n,n:f.n,loc:loc,rival:loc?m[2]:m[1],j:true,a:a,b:b,tx:a+" – "+b+(m[5]?" †":"")}}).filter(Boolean);
 if(fcp.length){var extra=FOC===RES?chips.filter(function(c){return c.n>ULT}):[];chips=fcp.concat(extra)}
-zExtras(chips).forEach(function(t){dest.push(t)});
+zExtrasAll(chips,zChipsEq(zFixCl,yo.n,true)).forEach(function(t){dest.push(t)});
 cardRec=zRecorrido({yo:FOC===RES,nombre:yo.n,titulo:"Torneo Inicial · Zona "+zy.z,
 stats:[["PUESTO",pos+".º"],["PTS",yo.pts],["PJ",yo.pj],["EFECT.",ef+"%"],["GF:GC",yo.gf+":"+yo.gc],["DIF",(d>0?"+":"")+d]],
 g:yo.g,e:yo.e,p:yo.p,pj:yo.pj,bullets:dest,chips:chips,
@@ -1568,7 +1583,7 @@ if(sf.pj>0&&sf.p===0)dest.push("Invicto en "+sf.pj+" partidos");else if(sf.p===1
 var chips=D.fechas.map(function(f){var m=f.p.filter(function(x){return x[1]===foco||x[2]===foco})[0];if(!m)return null;
 var loc=m[1]===foco,j=typeof m[3]==="number"&&typeof m[4]==="number",su=m[3]==="S",a=loc?m[3]:m[4],b=loc?m[4]:m[3];
 return{key:f.n,n:f.n,loc:loc,rival:loc?m[2]:m[1],j:j,a:a,b:b,tx:j?a+" – "+b+(m[5]?" †":""):(su?"SUSP.":"por jugar")}}).filter(Boolean);
-zExtras(chips).forEach(function(t){dest.push(t)});
+zExtrasAll(zChipsEq(zFixAp,foco,false),chips).forEach(function(t){dest.push(t)});
 if(sf.rem>0)dest.push("Restan "+sf.rem+(sf.rem===1?" partido":" partidos")+" por jugar o definir");
 cardRec=zRecorrido({yo:foco.toLowerCase()===RES,nombre:foco,titulo:"Torneo Complementario · Zona "+zn.z,
 stats:[["PUESTO",pos+".º"],["PTS",sf.pts],["PJ",sf.pj],["EFECT.",ef+"%"],["GF:GC",sf.gf+":"+sf.gc],["DIF",(dd>0?"+":"")+dd]],
@@ -1680,7 +1695,7 @@ ds2.push("Inicial: "+fq.apPts+" pts · Complementario: "+fq.clPts+" pts");
 var ra2=rk2("gf"),rd2=rk2("gc",true);
 ds2.push("Puesto en goles a favor ("+fq.gf+"): "+ra2+".º de "+tabla.length+" equipos");
 ds2.push("Puesto en goles en contra ("+fq.gc+", menos es mejor): "+rd2+".º de "+tabla.length+" equipos");
-zExtras(apC).forEach(function(t){ds2.push("Inicial · "+t)});zExtras(clC).forEach(function(t){ds2.push("Complementario · "+t)});
+zExtrasAll(apC,clC).forEach(function(t){ds2.push(t)});
 ds2.push((fq===d1||fq===d2)?"⚠ En zona de descenso":"Fuera de la zona de descenso");
 cardRec=zRecorrido({yo:fq.n.toLowerCase()===RES,nombre:fq.n,titulo:"Campeonato 2026 · Inicial + Complementario",stats:[["PUESTO",fq.pos+".º"],["PTS",fq.pts],["PJ",fq.pj],["EFECT.",ef2+"%"],["GF:GC",fq.gf+":"+fq.gc],["DIF",(fq.dif>0?"+":"")+fq.dif]],g:fq.g,e:fq.e,p:fq.p,pj:fq.pj,bullets:ds2,grupos:[["TORNEO INICIAL",apC],["TORNEO COMPLEMENTARIO",clC]]})}
 if(!sel){var mAn=[];zFixAp.fechas.forEach(function(f){f.p.forEach(function(m){mAn.push({l:m[1],v:m[2],a:m[3],b:m[4],n:f.n,t:"I",tl:"Inicial"})})});zFixCl.fechas.forEach(function(f){f.p.forEach(function(m){if(typeof m[3]==="number"&&typeof m[4]==="number")mAn.push({l:m[1],v:m[2],a:m[3],b:m[4],n:f.n,t:"C",tl:"Complementario"})})});cardRec=zGral({titulo:"Campeonato 2026 · Inicial + Complementario",matches:mAn,rows:tabla})}
