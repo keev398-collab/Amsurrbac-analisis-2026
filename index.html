@@ -48,38 +48,36 @@ body{background:#F5F3EA;-webkit-text-size-adjust:100%}
   .app-main [style*="grid-template-columns: 1fr 1fr 1.4fr"],
   .app-main [style*="grid-template-columns: 0.8fr 0.8fr 1fr"]{grid-template-columns:1fr !important}
 
-  /* tablas hechas con grid: scroll horizontal dentro de su tarjeta */
-  .app-main :has(> [style*="1.4fr 0.7fr 0.6fr"]),
-  .app-main :has(> [style*="0.9fr 1.3fr 1fr"]),
-  .app-main :has(> [style*="0.4fr 1.3fr 0.6fr"]),
-  .app-main :has(> [style*="1fr 0.3fr 1fr 0.5fr"]),
-  .app-main :has(> [style*="1.3fr 1fr 0.6fr"]),
-  .app-main :has(> [style*="1.3fr 0.5fr 1fr"]),
-  .app-main :has(> [style*="0.8fr 1fr 0.7fr 0.7fr"]),
-  .app-main :has(> [style*="0.8fr 0.6fr 1.2fr"]){overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+  /* ===== Tablas: se adaptan al ancho del celular, sin scroll lateral ===== */
+  /* tablas reales (<table>) */
+  :is(.app-main,.zfm-body,.zrv-modal) table:not([style*="table-layout"]){width:100% !important;min-width:0 !important}
+  :is(.app-main,.zfm-body,.zrv-modal) table:not([style*="table-layout"]) :is(th,td){white-space:normal !important;padding:7px 3px !important;font-size:10.5px !important;letter-spacing:0 !important;line-height:1.25;overflow-wrap:break-word;word-break:normal}
+  :is(.app-main,.zfm-body,.zrv-modal) table:not([style*="table-layout"]) th{font-size:9px !important;overflow-wrap:normal}
+  :is(.app-main,.zfm-body,.zrv-modal) table:not([style*="table-layout"]) :is(th,td):first-child{padding-left:8px !important}
+  :is(.app-main,.zfm-body,.zrv-modal) table:not([style*="table-layout"]) :is(th,td):last-child{padding-right:8px !important}
+  /* tablas hechas con grid (filas de div) */
+  :is(.app-main,.zfm-body) :is([style*="1.4fr 0.7fr 0.6fr"],[style*="0.9fr 1.3fr 1fr 0.7fr"],[style*="0.4fr 1.3fr 1.3fr 0.6fr"]){min-width:0 !important;gap:4px;padding-left:8px !important;padding-right:8px !important;font-size:11px !important;letter-spacing:0 !important}
+  :is(.app-main,.zfm-body) :is([style*="1.4fr 0.7fr 0.6fr"],[style*="0.9fr 1.3fr 1fr 0.7fr"],[style*="0.4fr 1.3fr 1.3fr 0.6fr"]) > *{min-width:0;overflow-wrap:anywhere}
+  :is(.app-main,.zfm-body) :is([style*="1.4fr 0.7fr 0.6fr"],[style*="0.9fr 1.3fr 1fr 0.7fr"],[style*="0.4fr 1.3fr 1.3fr 0.6fr"])[style*="letter-spacing"]{font-size:8.5px !important}
+  :is(.app-main,.zfm-body) :is([style*="1.4fr 0.7fr 0.6fr"],[style*="0.9fr 1.3fr 1fr 0.7fr"],[style*="0.4fr 1.3fr 1.3fr 0.6fr"])[style*="letter-spacing"] > *{overflow-wrap:normal}
+  .app-main [style*="1.4fr 0.7fr 0.6fr"]{grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,0.9fr)) repeat(2,minmax(0,0.7fr)) repeat(2,minmax(0,0.5fr)) !important}
+  .app-main [style*="0.9fr 1.3fr 1fr 0.7fr"]{grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,0.8fr) minmax(0,0.8fr) auto !important;padding-left:6px !important;padding-right:6px !important}
+  .app-main [style*="0.9fr 1.3fr 1fr 0.7fr"] > span:last-child{flex-wrap:nowrap !important;gap:2px !important}
+  .app-main [style*="0.9fr 1.3fr 1fr 0.7fr"] > span:last-child button{padding:2px !important;min-height:0 !important}
+  /* formularios en filas de varias columnas: pasan a 2 columnas */
+  .app-main :is([style*="1.3fr 1fr 0.6fr 0.7fr"],[style*="0.8fr 0.6fr 1.2fr"],[style*="0.8fr 1fr 0.7fr 0.7fr"]){grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  .app-main :is([style*="1fr 0.3fr 1fr 0.5fr"],[style*="1.3fr 0.5fr 1fr 1.1fr"]) > *{min-width:0}
+  .app-main :is([style*="1fr 0.3fr 1fr 0.5fr"],[style*="1.3fr 0.5fr 1fr 1.1fr"]) :is(select,input){width:100%;padding-left:4px !important;padding-right:4px !important}
   /* tarjetas de Análisis: una columna, nunca más anchas que la pantalla */
   .app-main [style*="minmax(300px, 1fr)"]{grid-template-columns:minmax(0,1fr) !important}
   .app-main [style*="flex: 1 1 300px"],.app-main [style*="flex: 1 1 260px"]{flex-basis:100% !important}
   .app-main [style*="min-width: 130px"]{min-width:0 !important}
   /* barras apiladas V/E/D: los segmentos no deben saltar de línea */
   .app-main [style*="height: 9px"][style*="display: flex"]{flex-wrap:nowrap !important}
-  /* tabla de jugadores de Análisis: todas las columnas visibles sin scroll */
-  .app-main [style*="1.4fr 0.7fr 0.6fr"]{min-width:0 !important;grid-template-columns:1.5fr 0.8fr 0.6fr 0.6fr 0.6fr 0.4fr 0.4fr !important;padding-left:10px !important;padding-right:10px !important;gap:4px;font-size:11px !important;letter-spacing:0 !important}
-  .app-main [style*="1.4fr 0.7fr 0.6fr"] > span{min-width:0;overflow-wrap:anywhere}
-  .app-main [style*="1.4fr 0.7fr 0.6fr"][style*="letter-spacing"]{font-size:8.5px !important}
-  .app-main [style*="1.4fr 0.7fr 0.6fr"][style*="letter-spacing"] > span{overflow-wrap:normal}
   /* vallas: todas las jornadas entran en el ancho de la pantalla */
   .app-main [style*="minmax(34px"]{grid-template-columns:none !important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px !important}
   .app-main [style*="minmax(34px"] > div{font-size:9px !important}
   .app-main [style*="overflow-x: auto"] > [style*="min-width"]{min-width:0 !important}
-  .app-main [style*="1.4fr 0.7fr 0.6fr"],
-  .app-main [style*="0.9fr 1.3fr 1fr"],
-  .app-main [style*="0.4fr 1.3fr 0.6fr"],
-  .app-main [style*="1fr 0.3fr 1fr 0.5fr"],
-  .app-main [style*="1.3fr 1fr 0.6fr"],
-  .app-main [style*="1.3fr 0.5fr 1fr"],
-  .app-main [style*="0.8fr 1fr 0.7fr 0.7fr"],
-  .app-main [style*="0.8fr 0.6fr 1.2fr"]{min-width:560px}
 }
 @media (max-width:420px){
   .app-main{padding:12px 10px calc(20px + env(safe-area-inset-bottom)) !important}
